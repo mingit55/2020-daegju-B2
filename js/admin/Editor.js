@@ -26,7 +26,6 @@ class Editor {
         this.selected = null;
         
         this.init().then(() => {
-            this.update();
             this.setEvents();
         });
     }
@@ -54,8 +53,8 @@ class Editor {
 
     async init(){
         // 책 커버 페이지
-        let page__image = new Page();
-        let cover_url = "/images/books/" + this.book.image;
+        let page__image = new Page(this);
+        let cover_url = "./images/books/" + this.book.image;
         let image = await new Promise(res => {
             let img = new Image();
             img.src = cover_url;
@@ -66,21 +65,22 @@ class Editor {
         this.pages.push(page__image);
 
         // 책 소개 페이지
-        let page__intro = new Page();
-        let intro_url = "/images/intro.jpg";
+        let page__intro = new Page(this);
+        let intro_url = "./images/intro.jpg";
         page__intro.addImage( intro_url, 0, 0 );
 
         this.pages.push(page__intro);
 
         // 동영상 페이지
-        let page__video = new Page();
-        page__video.addVideo("/video/ex.mp4", 0, 0);
+        let page__video = new Page(this);
+        page__video.addVideo("./video/ex.mp4", 0, 0);
 
         this.pages.push(page__video);
     }
 
     // 화면 업데이트
     update(){
+        if(!this.page) return;
         this.$workspace.html(this.page.outerHTML);
         this.$workspace[0].append(this.canvas);
         $(".page__count").text(`페이지 ${this.index + 1}/${this.pages.length}`);
@@ -124,7 +124,7 @@ class Editor {
 
         // 페이지 생성
         this.$root.on("click", ".btn-create", e => {
-            this.pages.push(new Page());
+            this.pages.push(new Page(this));
             this.index = this.pages.length - 1;
             this.update();
         });
@@ -133,12 +133,10 @@ class Editor {
         this.$workspace.on("mousedown", e => {
             if(this.imageURL){
                 this.page.addImage(this.imageURL, e.offsetX, e.offsetY)
-                this.update();
                 this.imageURL = null;
             } 
             else if(this.videoURL){
                 this.page.addVideo(this.videoURL, e.offsetX, e.offsetY);
-                this.update();
                 this.videoURL = null;
             }
             else if(e.which === 1 && this.tool && this.tool.onmousedown){
@@ -169,6 +167,7 @@ class Editor {
                 };
                 reader.readAsDataURL(file);
             }
+            e.target.value = ""
         });
         this.$root.on("change", "#upload__video", e => {
             this.selected = null;
@@ -182,6 +181,66 @@ class Editor {
                 };
                 reader.readAsDataURL(file);
             }
+            e.target.value = ""
+        });
+
+
+        // HTML 다운로드
+        this.$root.on("click", ".btn-download", e => {
+            let htmlPages = this.pages.map(item => item.outerHTML);
+
+            let html = `<!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title>Document</title>
+                                <style>
+                                    .page {
+                                        position: relative;
+                                        overflow: hidden;
+                                        width: 1000px;
+                                        height: 800px;
+                                    }
+                                    .page__item {
+                                        position: absolute;
+                                        pointer-events: none;
+                                    }
+                            
+                                    .page__video {
+                                        position: relative;
+                                        background-color: #000;
+                                    }
+                                    .page__video video {
+                                        max-width: 100%;
+                                        max-height: 100%;
+                                    }
+                                    .page__video input {
+                                        position: absolute;
+                                        right: 1em; bottom: 1.5em;
+                                        width: calc(100% - 80px - 3em);
+                                    }
+                                    .page__video button {
+                                        position: absolute;
+                                        left: 1em; bottom: 1em;
+                                        background-color: #fff;
+                                        font-size: 0.9em;
+                                        text-align: center;
+                                        line-height: 40px;
+                                        width: 80px;
+                                        height: 40px;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                ${htmlPages.join('')}
+                            </body>
+                            </html>`;
+            let blob = new Blob([html], {type: "text/html"});
+            let a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = this.book.name + ".html";
+            a.click();
         });
     }
 
@@ -226,6 +285,10 @@ class Editor {
                             <div class="workspace mt-4">
                     
                             </div>
+                        </div>
+                        <div class="p-3">
+                            <button class="btn-download btn-filled">html문서로저장</button>
+                            <button class="btn-borderd ml-2">pdf문서로저장</button>
                         </div>
                     </div>`);
     }

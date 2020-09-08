@@ -18,9 +18,10 @@ class App {
 
     // 도서 정보 가져오기
     getBooks(){
-        return fetch("/json/book.json")
-            .then(res => res.json())
-            .then(books => books.map((book, i) => ({...book, id: i + 1})));
+        return books.map((book, i) => ({...book, id: i + 1}));
+        // return fetch("/json/book.json")
+        //     .then(res => res.json())
+        //     .then(books => books.map((book, i) => ({...book, id: i + 1})));
     }
 
     // 화면 업데이트
@@ -36,7 +37,7 @@ class App {
         viewList.forEach(item => {
             $("#content").append(`<div class="col-lg-3 mb-4">
                                     <div class="item border bg-white p-2" data-id="${item.id}">
-                                        <img src="/images/books/${item.image}" alt="책 표지" class="fit-contain hx-300">
+                                        <img src="./images/books/${item.image}" alt="책 표지" class="fit-contain hx-300">
                                         <div class="p-3">
                                             <div>
                                                 <span class="fx-2">${item.name}</span>
